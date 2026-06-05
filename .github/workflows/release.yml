@@ -1,0 +1,86 @@
+name: Create Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., v1.2.3)'
+        required: true
+        type: string
+      source-ref:
+        description: 'Branch or SHA to build from (default: 6.x)'
+        required: false
+        default: '6.x'
+        type: string
+
+permissions: {}
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Validate version format
+        run: |
+          if ! echo "${{ inputs.version }}" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+'; then
+            echo "::error::Version must match v#.#.# format (got: ${{ inputs.version }})"
+            exit 1
+          fi
+
+      - name: Get release bot token
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ secrets.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+
+      - name: Checkout source ref
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ inputs.source-ref }}
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Assert tag does not already exist
+        run: |
+          if git ls-remote --tags origin "${{ inputs.version }}" | grep -q .; then
+            echo "::error::Tag ${{ inputs.version }} already exists. Aborting."
+            exit 1
+          fi
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build assets
+        run: |
+          npm run build
+          npm run build-dev
+
+      - name: Configure git identity
+        run: |
+          git config user.name "${{ steps.app-token.outputs.app-slug }}[bot]"
+          git config user.email "${{ secrets.RELEASE_APP_ID }}+${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com"
+
+      - name: Commit built assets
+        run: |
+          git add --force resources/dist resources/dist-dev
+          git commit -m "chore: build assets for ${{ inputs.version }}"
+
+      - name: Tag the build commit
+        run: git tag "${{ inputs.version }}"
+
+      - name: Push tag
+        run: git push origin "${{ inputs.version }}"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          gh release create "${{ inputs.version }}" \
+            --title "${{ inputs.version }}" \
+            --generate-notes
