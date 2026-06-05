@@ -1,0 +1,15 @@
+{
+    "name": "jasonvarga/test-release-workflow",
+    "autoload": {
+        "psr-4": {
+            "JasonVarga\\TestReleaseWorkflow\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Jason Varga",
+            "email": "jason@pixelfear.com"
+        }
+    ],
+    "require": {}
+}
