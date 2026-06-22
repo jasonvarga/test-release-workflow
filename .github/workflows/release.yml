@@ -18,7 +18,8 @@ on: # zizmor: ignore[concurrency-limits]
 permissions: {}
 
 jobs:
-  release: # zizmor: ignore[anonymous-definition]
+  release:
+    name: Create Release
     runs-on: ubuntu-latest
     environment: Releases
     permissions: {} # all writes go through the App token; GITHUB_TOKEN needs no scopes
