@@ -20,7 +20,7 @@ permissions: {}
 jobs:
   release: # zizmor: ignore[anonymous-definition]
     runs-on: ubuntu-latest
-    environment: release
+    environment: Release
     permissions: {} # all writes go through the App token; GITHUB_TOKEN needs no scopes
     steps:
       - name: Validate version format
