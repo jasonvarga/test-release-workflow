@@ -7,13 +7,6 @@ on: # zizmor: ignore[concurrency-limits]
         description: 'Release version (e.g. v1.2.3)'
         required: true
         type: string
-      source-ref:
-        description: 'Branch to build and tag from'
-        required: true
-        default: '6.x'
-        type: choice
-        options:
-          - 6.x
 
 permissions: {}
 
@@ -41,10 +34,9 @@ jobs:
           private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
           permission-contents: write
 
-      - name: Checkout source ref
+      - name: Checkout
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
-          ref: ${{ inputs.source-ref }}
           token: ${{ steps.app-token.outputs.token }}
           persist-credentials: true # zizmor: ignore[artipacked] App token is needed to push the tag
 
